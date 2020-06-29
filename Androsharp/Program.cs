@@ -13,6 +13,11 @@ namespace Androsharp
 	{
 		private static void Main(string[] args)
 		{
+			Android.Init();
+		}
+
+		static void test()
+		{
 			var bin =
 				"FF D8 FF E0 00 10 4A 46 49 46 00 01 01 01 01 2C " +
 				"01 2C 00 00 FF DB 00 43 00 06 04 05 06 05 04 06 " +
@@ -34,13 +39,11 @@ namespace Androsharp
 			var s  = string.Format("exec-out \"dd if=sdcard/image.jpg ibs=128 skip=0 count=1 2>>/dev/null\"");
 
 
-			var cmd = string.Format("{0} {1}", a2, s);
+			var cmd = CliCommand.From("{0} {1}", a2, s);
 
-			var proc = Cli.Shell(cmd, true);
+			var proc = CliResult.Run(cmd, DataType.ByteArray);
 
-			var res = CliUtilities.ReadToEnd(proc.StandardOutput.BaseStream);
-			Console.WriteLine(res.Length);
-			CliUtilities.cmp(binrg, res);
+			CliUtilities.Compare(binrg, (byte[]) proc.Data);
 		}
 	}
 }

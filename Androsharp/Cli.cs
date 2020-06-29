@@ -78,22 +78,24 @@ namespace Androsharp
 
 	public static class Cli
 	{
+		private const string CMD = "cmd.exe";
+
+		private const string KERNEL32 = "kernel32.dll";
+
+
 		/// <summary>
-		/// Creates a <see cref="Process"/> to execute <paramref name="cmd"/>
+		/// Creates a <see cref="Process"/> to execute <paramref name="ccmd"/>
 		/// </summary>
 		/// <param name="ccmd">Command to run</param>
-		/// <param name="autoStart">Whether to automatically start the <c>cmd.exe</c> process</param>
 		/// <returns><c>cmd.exe</c> process</returns>
-		public static Process Shell(CliCommand ccmd, bool autoStart = false)
+		public static Process Shell(string ccmd)
 		{
-			var cmd = ccmd.FullCommand;
-
-			Console.WriteLine(cmd);
+			Console.WriteLine(ccmd);
 			
 			var startInfo = new ProcessStartInfo
 			{
-				FileName               = "cmd.exe",
-				Arguments              = String.Format("/C {0}", cmd),
+				FileName               = CMD,
+				Arguments              = String.Format("/C {0}", ccmd),
 				RedirectStandardOutput = true,
 				RedirectStandardError  = true,
 				UseShellExecute        = false,
@@ -106,15 +108,12 @@ namespace Androsharp
 				EnableRaisingEvents = true
 			};
 
-			if (autoStart)
-				process.Start();
-
-
+			
+			
+			
+			
 			return process;
 		}
-
-
-		private const string KERNEL32 = "kernel32.dll";
 
 		/// <summary>
 		/// http://pinvoke.net/default.aspx/kernel32/SetConsoleOutputCP.html

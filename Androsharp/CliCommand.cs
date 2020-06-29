@@ -1,51 +1,68 @@
 using System;
 using System.Text;
+using JetBrains.Annotations;
+using static Androsharp.Constants;
 
 namespace Androsharp
 {
 	// todo
-	
+
 	public class CliCommand
 	{
-		public string Command { get; }
-		
-		public string FullCommand { get; }
-		
-		public Scope Scope { get; }
+		public string Command { get; internal set; }
 
-		public CliCommand(string command, Scope scope = Scope.None)
+		public Scope Scope { get; internal set; }
+
+		private CliCommand(string command)
 		{
 			Command = command;
-			Scope = scope;
-			FullCommand = CreateFullCommand(command);
+			Scope   = Scope.None;
 		}
 
-		public static implicit operator CliCommand(string c)
+		[StringFormatMethod(FMT_ARG)]
+		public static CliCommand From(string fmt, params object[] args)
+		{
+			var cmd  = string.Format(fmt, args);
+			var ccmd = new CliCommand(cmd);
+
+
+			return ccmd;
+		}
+
+		public CliCommand WithScope(Scope s)
+		{
+			Scope = s;
+
+			return this;
+		}
+
+
+		/*public static implicit operator CliCommand(string c)
 		{
 			return new CliCommand(c);
-		}
+		}*/
 
-		private static string CreateFullCommand(string cmd, Scope scope = Scope.None)
+		public string GetFullCommand()
 		{
 			const string SCOPE_ADB        = "adb ";
 			const string SCOPE_ADBSHELL   = "adb shell ";
 			const string SCOPE_ADBEXECOUT = "adb exec-out ";
-			
-			switch (scope) {
+
+			switch (Scope) {
 				case Scope.None:
-					return cmd;
+					return Command;
 					break;
 				case Scope.Adb:
-					return SCOPE_ADB + cmd;
+					return SCOPE_ADB + Command;
 					break;
 				case Scope.AdbShell:
-					return SCOPE_ADBSHELL + cmd;
+					return SCOPE_ADBSHELL + Command;
 					break;
 				case Scope.AdbExecOut:
-					return SCOPE_ADBEXECOUT + cmd;
+					return SCOPE_ADBEXECOUT + Command;
 					break;
 				default:
-					throw new ArgumentOutOfRangeException(nameof(scope), scope, null);
+					throw new Exception();
 			}
 		}
 
@@ -53,7 +70,7 @@ namespace Androsharp
 		{
 			var sb = new StringBuilder();
 			//sb.AppendFormat("{0} (scope: {1})", FullCommand, Scope);
-			sb.AppendFormat(">> {0}", FullCommand);
+			sb.AppendFormat(">> {0}", GetFullCommand());
 			return sb.ToString();
 		}
 	}

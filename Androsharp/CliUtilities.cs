@@ -17,19 +17,19 @@ namespace Androsharp
 		private const char GT       = '>';
 		private const char ASTERISK = '*';
 
-		public static void cmp(byte[] expected, byte[] actual, bool onlyShowMismatches = true)
+		public static void Compare(byte[] expected, byte[] actual, bool onlyShowMismatches = true)
 		{
 			var min = actual.Length < expected.Length ? actual : expected;
 			var max = actual.Length > expected.Length ? actual : expected;
-			
-			Console.WriteLine("Expected length: {0}\nActual length: {1}\n",expected.Length, actual.Length);
-			
+
+			Console.WriteLine("Expected length: {0}\nActual length: {1}\n", expected.Length, actual.Length);
+
 			bool allEq = expected.SequenceEqual(actual);
 			Console.WriteLine("Full sequence equal: {0}", allEq);
 
 			bool minEq = min.SequenceEqual(actual.Take(min.Length));
 			Console.WriteLine("Actual sequence equal: {0} ({1}/{2})\n", minEq, min.Length, max.Length);
-			
+
 			for (int i = 0; i < min.Length; i++) {
 				var n1 = expected[i];
 				var n2 = actual[i];
@@ -44,13 +44,11 @@ namespace Androsharp
 				else if (!onlyShowMismatches) {
 					Console.Write(sz);
 				}
-
-				
-				
 			}
 
 			Console.WriteLine();
 		}
+
 		public static string[] ReadAllLines(StreamReader stream)
 		{
 			var list = new List<string>();
@@ -65,6 +63,7 @@ namespace Androsharp
 
 			return list.ToArray();
 		}
+
 		public static byte[] ParseByteArray(string szPattern)
 		{
 //			List<byte> patternbytes = new List<byte>();
@@ -83,7 +82,7 @@ namespace Androsharp
 
 			return patternBytes;
 		}
-		
+
 		public static byte[] ReadToEnd(Stream stream)
 		{
 			long originalPosition = 0;
