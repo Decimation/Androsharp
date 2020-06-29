@@ -3,6 +3,11 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.0</TargetFramework>
+        
+        <LangVersion>latest</LangVersion>
+        <DefineConstants>JETBRAINS_ANNOTATIONS</DefineConstants>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!--<Nullable>enable</Nullable>-->
     </PropertyGroup>
 
 </Project>
