@@ -40,7 +40,6 @@ namespace Androsharp
 		private static void Main(string[] args)
 		{
 			if (args == null || args.Length < 2) {
-				Console.WriteLine("Insufficient arguments");
 				return;
 			}
 
@@ -49,9 +48,7 @@ namespace Androsharp
 			if (fn == "repull") {
 				var remote = args[1];
 				
-				var bvu = args.Length >= 3 ? args[2] : null;
-
-				if (bvu != null) {
+				if (Common.SafeIndex(args, 2, out var bvu)) {
 					var bu = bvu.Last().ToString();
 					var bv = long.Parse(bvu.SubstringBefore(bu));
 
@@ -59,7 +56,8 @@ namespace Androsharp
 					CopyConvert.BlockUnit  = bu;
 				}
 
-				var dest = args.Length >= 4 ? args[3] : null;
+				Common.SafeIndex(args, 3, out var dest);
+				
 
 				CopyConvert.Repull(remote, dest);
 			}
@@ -70,7 +68,7 @@ namespace Androsharp
 				Android.Reset();
 			}
 			else {
-				Console.WriteLine("Verb not recognized or implemented: {0}", fn);
+				Console.WriteLine("Command/verb not recognized or implemented: {0}", fn);
 			}
 		}
 	}

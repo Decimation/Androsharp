@@ -89,5 +89,23 @@ namespace Androsharp.Utilities
 		}
 
 		internal const string FMT_ARG = "fmt";
+
+		internal static bool SafeIndex<T>(T[] rg, int i, out T t)
+		{
+			if (i < rg.Length) {
+				t= rg[i];
+				return true;
+			}
+
+			t = default;
+			return false;
+		}
+		
+		internal static T SafeIndex<T>(this T[] rg, int i)
+		{
+			bool b=SafeIndex(rg, i, out var t);
+
+			return t;
+		}
 	}
 }

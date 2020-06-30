@@ -2,6 +2,7 @@
 
 #nullable enable
 using System;
+using System.Diagnostics;
 using System.IO;
 using Androsharp.Model;
 using Androsharp.Utilities;
@@ -93,13 +94,6 @@ namespace Androsharp.CopyAndConvert
 	/// </summary>
 	public static class CopyConvert
 	{
-
-		static CopyConvert()
-		{
-			Android.Setup();
-		}
-		
-		
 		// adb shell "dd if=sdcard/image.jpg bs=128 skip=0 count=1 2>>/dev/null"
 
 		public const int FD_DD_BINARY = Unix.FD_STDOUT;
@@ -111,6 +105,11 @@ namespace Androsharp.CopyAndConvert
 		///     Maximum recommended block size tested
 		/// </summary>
 		public const long BlockSizeMaxBytes = 8192 * 4096;
+
+		static CopyConvert()
+		{
+			Android.Setup();
+		}
 
 		/// <summary>
 		///     Block size value that will be multiplied by the <see cref="BlockUnit" /> unit multiple to calculate
@@ -160,7 +159,7 @@ namespace Androsharp.CopyAndConvert
 		}
 
 		public static bool RunChecks { get; set; } = true;
-		
+
 		private static CCRecord ReadRecord(CCArguments args)
 		{
 			string ddCmdStr = args.Compile();
@@ -187,7 +186,7 @@ namespace Androsharp.CopyAndConvert
 		}
 
 		private static long SizeToBlocks(long size, long blockSize) => (long) Math.Ceiling((double) (size / blockSize));
-		
+
 
 		/// <summary>
 		///     Repull implementation
@@ -202,7 +201,7 @@ namespace Androsharp.CopyAndConvert
 
 				dest = Path.Combine(DefaultOutput, nn);
 			}
-			
+
 			if (BlockSize >= BlockSizeMaxBytes) {
 				Console.WriteLine("Warning: Using a block size larger than the recommended maximum");
 			}
@@ -222,10 +221,10 @@ namespace Androsharp.CopyAndConvert
 			Console.WriteLine("Remote size: {0} bytes", remSize);
 
 			Console.WriteLine("\nBlock size: {0} bytes ({1} bv, {2} bu)", BlockSize, BlockValue, BlockUnit);
-			
+
 			Console.WriteLine("\nDestination file: {0}", dest);
-			
-			
+
+
 			double rateSum = 0;
 
 			const int RND = 2;
@@ -234,16 +233,17 @@ namespace Androsharp.CopyAndConvert
 
 			var outStream = new FileStream(dest, FileMode.Append);
 
+			var sw = Stopwatch.StartNew();
+			
 			for (int i = 0; i <= nBlocks; i++) {
-				
 				var start = DateTimeOffset.Now;
 
 				var ccArg = new CCArguments
 				{
-					Count = 1,
-					InputBlockSize   = BlockSize,
-					InputFile    = remote,
-					Skip  = i,
+					Count          = 1,
+					InputBlockSize = BlockSize,
+					InputFile      = remote,
+					Skip           = i,
 				};
 
 
@@ -261,7 +261,7 @@ namespace Androsharp.CopyAndConvert
 				var end = DateTime.Now;
 
 				var duration = end - start;
-				
+
 				double bytesPerSec     = resBin.Length / duration.TotalSeconds;
 				double megabytesPerSec = Math.Round(ToMegabytes(bytesPerSec), RND);
 
@@ -281,19 +281,25 @@ namespace Androsharp.CopyAndConvert
 			outStream.Flush();
 			outStream.Close();
 
+			sw.Stop();
+
+			Console.WriteLine("Completed in {0:F} sec",sw.Elapsed.TotalSeconds);
+			
+			
 			Console.WriteLine("\n\nWrote data to {0}!\n\n", dest);
 
 			if (RunChecks) {
-				var destSize = new FileInfo(dest).Length;
+				Console.WriteLine("Verifying files");
 				
+				var destSize = new FileInfo(dest).Length;
+
 				var destSha1 = Sha1_Hash.GetFileHashString(dest);
 
 				var remSha1 = Android.GetFileSha1Hash(remote);
 
-				Console.WriteLine("Size equal: {0} | Sha1 equal: {1}", 
+				Console.WriteLine("Size equal: {0} | Sha1 equal: {1}",
 				                  CliUtilities.GetSuccessChar(destSize, remSize),
 				                  CliUtilities.GetSuccessChar(destSha1, remSha1));
-				
 			}
 		}
 	}
