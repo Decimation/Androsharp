@@ -1,8 +1,7 @@
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+using Androsharp.Model;
+using Androsharp.Utilities;
 
-namespace Androsharp
+namespace Androsharp.CopyAndConvert
 {
 	// https://github.com/Decimation/SmartBridge
 	// https://github.com/Decimation/SmartBridge/blob/master/SmartBridge/Bridge.cs
@@ -75,60 +74,34 @@ namespace Androsharp
 	//	  
 	// 2.	Create block segments with dd, write to remote file, then pull to local and collate the raw binary
 	//		files to reassemble the original file
-
-	public static class Cli
+	
+	
+	/// <summary>
+	/// DD utilities
+	/// </summary>
+	public class CopyConvert
 	{
-		private const string CMD = "cmd.exe";
+		// adb shell "dd if=sdcard/image.jpg bs=128 skip=0 count=1 2>>/dev/null"
 
-		private const string KERNEL32 = "kernel32.dll";
+		public const UnixFileDescriptor FD_DD_BINARY = UnixFileDescriptor.StdOut;
+		
+		
+		public const UnixFileDescriptor FD_DD_STATS = UnixFileDescriptor.StdErr;
 
 
-		/// <summary>
-		/// Creates a <see cref="Process"/> to execute <paramref name="ccmd"/>
-		/// </summary>
-		/// <param name="ccmd">Command to run</param>
-		/// <returns><c>cmd.exe</c> process</returns>
-		public static Process Shell(string ccmd)
+		public CliCommand Create(CC_Arguments args)
 		{
-			Console.WriteLine(ccmd);
-			
-			var startInfo = new ProcessStartInfo
-			{
-				FileName               = CMD,
-				Arguments              = String.Format("/C {0}", ccmd),
-				RedirectStandardOutput = true,
-				RedirectStandardError  = true,
-				UseShellExecute        = false,
-				CreateNoWindow         = true
-			};
-
-			var process = new Process
-			{
-				StartInfo           = startInfo,
-				EnableRaisingEvents = true
-			};
+			var ddCmdStr = args.Compile();
+			var ddCmd = CliCommand.Create(Scope.AdbExecOut, ddCmdStr);
 
 			
 			
 			
-			
-			return process;
+			// todo - left off here
+
+
+
+			return ddCmd;
 		}
-
-		/// <summary>
-		/// http://pinvoke.net/default.aspx/kernel32/SetConsoleOutputCP.html
-		/// </summary>
-		[DllImport(KERNEL32, SetLastError = true)]
-		private static extern bool SetConsoleOutputCP(
-			uint wCodePageId
-		);
-
-		/// <summary>
-		/// http://pinvoke.net/default.aspx/kernel32/SetConsoleCP.html
-		/// </summary>
-		[DllImport(KERNEL32, SetLastError = true)]
-		private static extern bool SetConsoleCP(
-			uint wCodePageId
-		);
 	}
 }

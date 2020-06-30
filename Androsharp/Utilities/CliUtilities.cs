@@ -4,7 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace Androsharp
+namespace Androsharp.Utilities
 {
 	public static class CliUtilities
 	{
@@ -16,6 +16,44 @@ namespace Androsharp
 
 		private const char GT       = '>';
 		private const char ASTERISK = '*';
+		
+		/// <summary>
+		///     <returns>String value after [last] <paramref name="a"/></returns>
+		/// </summary>
+		internal static string SubstringAfter(this string value, string a)
+		{
+			int posA = value.LastIndexOf(a, StringComparison.Ordinal);
+			if (posA == -1)
+				return String.Empty;
+
+			int adjustedPosA = posA + a.Length;
+			return adjustedPosA >= value.Length ? String.Empty : value.Substring(adjustedPosA);
+		}
+
+		/// <summary>
+		///     <returns>String value after [first] <paramref name="a"/></returns>
+		/// </summary>
+		internal static string SubstringBefore(this string value, string a)
+		{
+			int posA = value.IndexOf(a, StringComparison.Ordinal);
+			return posA == -1 ? String.Empty : value.Substring(0, posA);
+		}
+
+		/// <summary>
+		///     <returns>String value between [first] <paramref name="a"/> and [last] <paramref name="b"/></returns>
+		/// </summary>
+		internal static string SubstringBetween(this string value, string a, string b)
+		{
+			int posA = value.IndexOf(a, StringComparison.Ordinal);
+			int posB = value.LastIndexOf(b, StringComparison.Ordinal);
+
+			if (posA == -1 || posB == -1)
+				return String.Empty;
+
+
+			int adjustedPosA = posA + a.Length;
+			return adjustedPosA >= posB ? String.Empty : value.Substring(adjustedPosA, posB - adjustedPosA);
+		}
 
 		public static void Compare(byte[] expected, byte[] actual, bool onlyShowMismatches = true)
 		{

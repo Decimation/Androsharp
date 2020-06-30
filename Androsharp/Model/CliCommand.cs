@@ -1,39 +1,39 @@
 using System;
 using System.Text;
 using JetBrains.Annotations;
-using static Androsharp.Constants;
+using static Androsharp.Model.Constants;
 
-namespace Androsharp
+namespace Androsharp.Model
 {
 	// todo
 
 	public class CliCommand
 	{
-		public string Command { get; internal set; }
+		public string CommandStub { get; private set; }
 
-		public Scope Scope { get; internal set; }
+		public Scope Scope { get; private set; }
 
-		private CliCommand(string command)
+		private CliCommand(string commandStub, Scope s)
 		{
-			Command = command;
-			Scope   = Scope.None;
+			CommandStub = commandStub;
+			Scope = s;
 		}
 
+		
 		[StringFormatMethod(FMT_ARG)]
-		public static CliCommand From(string fmt, params object[] args)
+		public static CliCommand Create(string fmt, params object[] args)
+		{
+			return Create(Scope.None, fmt, args);
+		}
+		
+		[StringFormatMethod(FMT_ARG)]
+		public static CliCommand Create(Scope s,string fmt, params object[] args)
 		{
 			var cmd  = string.Format(fmt, args);
-			var ccmd = new CliCommand(cmd);
+			var ccmd = new CliCommand(cmd,s);
 
 
 			return ccmd;
-		}
-
-		public CliCommand WithScope(Scope s)
-		{
-			Scope = s;
-
-			return this;
 		}
 
 
@@ -50,16 +50,16 @@ namespace Androsharp
 
 			switch (Scope) {
 				case Scope.None:
-					return Command;
+					return CommandStub;
 					break;
 				case Scope.Adb:
-					return SCOPE_ADB + Command;
+					return SCOPE_ADB + CommandStub;
 					break;
 				case Scope.AdbShell:
-					return SCOPE_ADBSHELL + Command;
+					return SCOPE_ADBSHELL + CommandStub;
 					break;
 				case Scope.AdbExecOut:
-					return SCOPE_ADBEXECOUT + Command;
+					return SCOPE_ADBEXECOUT + CommandStub;
 					break;
 				default:
 					throw new Exception();
@@ -70,7 +70,7 @@ namespace Androsharp
 		{
 			var sb = new StringBuilder();
 			//sb.AppendFormat("{0} (scope: {1})", FullCommand, Scope);
-			sb.AppendFormat(">> {0}", GetFullCommand());
+			sb.AppendFormat("Command: {0}", GetFullCommand());
 			return sb.ToString();
 		}
 	}

@@ -1,4 +1,4 @@
-namespace Androsharp
+namespace Androsharp.Model
 {
 	internal static class Constants
 	{
