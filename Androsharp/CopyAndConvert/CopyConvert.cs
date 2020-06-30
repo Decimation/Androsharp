@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Androsharp.Model;
 using Androsharp.Utilities;
+
+// ReSharper disable InconsistentNaming
 
 // ReSharper disable ReturnTypeCanBeEnumerable.Global
 
@@ -89,31 +92,36 @@ namespace Androsharp.CopyAndConvert
 	{
 		// adb shell "dd if=sdcard/image.jpg bs=128 skip=0 count=1 2>>/dev/null"
 
-		public const UnixFileDescriptor FD_DD_BINARY = UnixFileDescriptor.StdOut;
+		public const int FD_DD_BINARY = Unix.FD_StdOut;
 
-		public const UnixFileDescriptor FD_DD_STATS = UnixFileDescriptor.StdErr;
+		public const int FD_DD_STATS = Unix.FD_StdErr;
 
 		/// <summary>
 		/// Block size
 		/// </summary>
-		private const long BlockSize = 8192 * 4096;
+		internal const long BlockSize = 8192 * 4096;
 
 
-		public static CC_Record ReadRecord(CC_Arguments args)
+		public static CCRecord ReadRecord(CCArguments args)
 		{
 			var ddCmdStr = args.Compile();
 			ddCmdStr = string.Format("\"{0}\"", ddCmdStr);
 
 			var ddCmd = CliCommand.Create(Scope.AdbExecOut, ddCmdStr);
 
-
+			
 			var ddRes = CliResult.Run(ddCmd, DataType.ByteArray);
 
-			var ccRec = new CC_Record
-			{
-				BinaryRaw = (byte[]) ddRes.Data,
-				//StatsRaw = Android.Value.ReadFile(args.StatsRedirect)
-			};
+			var ccRec = new CCRecord();
+
+			lock (ccRec) {
+				ccRec.BinaryRaw = (byte[]) ddRes.Data;
+				//ccRec.StatsRaw = Android.Value.ReadFile(args.StatsRedirect);
+			}
+
+			//ddRes.CommandProcess.Close();
+			//ddRes.CommandProcess.WaitForExit();
+			//ddRes.CommandProcess.Kill();
 
 
 			return ccRec;
@@ -125,41 +133,37 @@ namespace Androsharp.CopyAndConvert
 		}
 
 
-		private static double ToMegabytes(double d)
+		/// <summary>
+		/// Repull implementation
+		/// </summary>
+		public static void Repull(string rem, string dest)
 		{
-			// todo
-
-			return d / 1024 / 1024;
-		}
-
-		public static byte[] Repull(string rem, string dest)
-		{
-			long remSize = Android.Value.RemoteSize(rem);
+			long remSize = Android.RemoteSize(rem);
 			long nBlocks = SizeToBlocks(remSize, BlockSize);
 
 			if (BlockSize >= remSize) {
 				nBlocks = 1;
 			}
 
-			var blockSizeMB = ((double) BlockSize) / 1024 / 1024;
+			var blockSizeMB = Common.ToMegabytes(((double) BlockSize));
 
 			Console.WriteLine("Remote size: {0}\nBlock size: {1} ({2} MB)\n", remSize, BlockSize, blockSizeMB);
 
 
 			// int capacity = (int) remSize;
 
-			var rg = new List<byte>();
-
-			double maxMegabytesPerSec = 0;
 
 			double rateSum = 0;
 
 			const int RND = 2;
 
+			int rgi = 0;
+			var stream = new FileStream(dest, FileMode.Append);
+			
 			for (int i = 0; i <= nBlocks; i++) {
 				var start = DateTimeOffset.Now;
 
-				var ccArg = new CC_Arguments
+				var ccArg = new CCArguments
 				{
 					arg_count = 1,
 					arg_ibs   = BlockSize,
@@ -167,11 +171,20 @@ namespace Androsharp.CopyAndConvert
 					arg_skip  = i,
 				};
 
-
+				
 				var res    = ReadRecord(ccArg);
 				var resBin = res.BinaryRaw;
 
-				rg.AddRange(resBin);
+
+				lock (resBin) {
+					// ~123ms
+					stream.Write(resBin, 0, resBin.Length);
+					stream.Flush();
+					rgi += resBin.Length;
+
+					
+				}
+
 
 				var end = DateTime.Now;
 
@@ -179,32 +192,22 @@ namespace Androsharp.CopyAndConvert
 
 
 				var bytesPerSec     = resBin.Length / duration.TotalSeconds;
-				var megabytesPerSec = Math.Round(bytesPerSec / 1024 / 1024, RND);
+				var megabytesPerSec = Math.Round(Common.ToMegabytes(bytesPerSec), RND);
 
-
-				if (megabytesPerSec > maxMegabytesPerSec) {
-					maxMegabytesPerSec = megabytesPerSec;
-				}
 
 				rateSum += megabytesPerSec;
 
 				var avgMegabytesPerSec = Math.Round(rateSum / i, RND);
 
-				var percent = ((double) rg.Count) / remSize;
+				var percent = ((double) rgi) / remSize;
 
-				Console.Write("\r{0}/{1} ({2} MB/sec) ({3} MB/sec max) ({4} MB/sec avg) ({5:P})",
-				              i, nBlocks, megabytesPerSec, maxMegabytesPerSec, avgMegabytesPerSec, percent);
+				Console.Write("\r{0}/{1} ({2} MB/sec) ({3} MB/sec avg) ({4:P})",
+				              i, nBlocks, megabytesPerSec, avgMegabytesPerSec, percent);
 			}
 
 			Console.WriteLine();
 
-			var brg = rg.ToArray();
-
 			Console.WriteLine("Writing data to {0}", dest);
-
-			File.WriteAllBytes(dest, brg);
-
-			return brg;
 		}
 	}
 }

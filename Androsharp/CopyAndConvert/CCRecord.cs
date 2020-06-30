@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 // ReSharper disable InconsistentNaming
 
@@ -7,7 +8,7 @@ namespace Androsharp.CopyAndConvert
 	/// <summary>
 	/// DD record
 	/// </summary>
-	public sealed class CC_Record
+	public sealed class CCRecord
 	{
 		/// <summary>
 		///

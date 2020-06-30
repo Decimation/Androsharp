@@ -14,7 +14,7 @@ namespace Androsharp.CopyAndConvert
 	/// <summary>
 	/// DD arguments
 	/// </summary>
-	public sealed class CC_Arguments : ICommand
+	public sealed class CCArguments : ICommand
 	{
 		/// <summary>
 		/// <c>if</c>
@@ -71,7 +71,7 @@ namespace Androsharp.CopyAndConvert
 
 		
 
-		public CC_Arguments()
+		public CCArguments()
 		{
 			arg_if = null!;
 			arg_ibs = 0;
@@ -101,14 +101,14 @@ namespace Androsharp.CopyAndConvert
 				sb.AppendFormat(" iflag={0}", arg_iflag.ToString());
 			}
 
-			var fileDescriptorOp = FileDescriptorReplace ? UnixConstants.REPLACE_OP : UnixConstants.APPEND_OP;
+			var fileDescriptorOp = FileDescriptorReplace ? Unix.REPLACE_OP : Unix.APPEND_OP;
 
 			HandleRedirect(BinaryRedirect, CopyConvert.FD_DD_BINARY);
 
 			HandleRedirect(StatsRedirect, CopyConvert.FD_DD_STATS);
 			
 			
-			void HandleRedirect(string? redirect, UnixFileDescriptor fd)
+			void HandleRedirect(string? redirect, int fd)
 			{
 				if (redirect != null) {
 					sb.Append(" ").Append((int) fd).Append(fileDescriptorOp).Append(redirect);

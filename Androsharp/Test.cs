@@ -17,7 +17,7 @@ namespace Androsharp
 		internal static bool RunFileTest(TestInfo t)
 		{
 			
-			var rg =CopyConvert.Repull(t.remote,t.dest);
+			CopyConvert.Repull(t.remote,t.dest);
 
 			var localInfo = FileMetaInfo.Get(t.local);
 			var destInfo  = FileMetaInfo.Get(t.dest);

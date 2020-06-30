@@ -6,7 +6,15 @@ namespace Androsharp.CopyAndConvert
 	public enum InputFileFlags
 	{
 		None,
+		
+		/// <summary>
+		/// <c>skip_bytes</c>
+		/// </summary>
 		skip_bytes,
+		
+		/// <summary>
+		/// <c>fullblock</c>
+		/// </summary>
 		fullblock
 	}
 }

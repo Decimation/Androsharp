@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Androsharp.Model
 {
 	// todo
 
-	public class CliResult
+	public sealed class CliResult
 	{
 		private CliResult(CliCommand command)
 		{
@@ -26,6 +27,8 @@ namespace Androsharp.Model
 		
 		public Process? CommandProcess { get; private set; }
 
+		// todo: performance: ~1100ms
+		
 		public static CliResult Run(CliCommand command, DataType dt = DataType.None)
 		{
 			var cliResult = new CliResult(command)
@@ -48,7 +51,12 @@ namespace Androsharp.Model
 					cliResult.Data = CliUtilities.ReadAllLines(stdOut);
 					break;
 				case DataType.ByteArray:
-					cliResult.Data = CliUtilities.ReadToEnd(stdOut.BaseStream);
+					// todo: performance ~900ms
+					var end = CliUtilities.ReadToEnd(stdOut.BaseStream);
+					lock (end) {
+						cliResult.Data = end;
+					}
+					
 					break;
 				case DataType.Unknown:
 					break;
@@ -59,6 +67,8 @@ namespace Androsharp.Model
 					throw new ArgumentOutOfRangeException(nameof(dt), dt, null);
 			}
 
+			//!!!
+			proc.Close();
 
 			return cliResult;
 		}

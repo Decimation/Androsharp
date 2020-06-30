@@ -7,7 +7,7 @@ namespace Androsharp.Model
 {
 	// todo
 
-	public class CliCommand
+	public sealed class CliCommand
 	{
 		public string CommandStub { get; private set; }
 

@@ -8,7 +8,7 @@ namespace Androsharp.Utilities
 {
 	// todo
 
-	public sealed class Android
+	public static class Android
 	{
 		public static readonly string BUSYBOX_EXE = @"C:\Users\Deci\Desktop\busybox";
 
@@ -16,21 +16,15 @@ namespace Androsharp.Utilities
 
 		public static readonly string REMOTE_BUSYBOX_EXE = "/data/local/tmp/busybox";
 
-		private Android()
-		{
-			Serial = GetSerial();
-		}
-
 
 		/// <summary>
 		/// Device serial
 		/// </summary>
-		public string? Serial { get; }
-
-		public static Android Value { get; private set; } = new Android();
+		public static string? Serial { get; }
 
 
-		public bool HasBusybox {
+
+		public static bool HasBusybox {
 			get {
 				//
 				// Check busybox status
@@ -46,7 +40,7 @@ namespace Androsharp.Utilities
 			}
 		}
 
-		public long RemoteSize(string s)
+		public static long RemoteSize(string s)
 		{
 			// sprintf(buf, "wc -c < \"%s\"", remoteFile);
 			
@@ -59,7 +53,7 @@ namespace Androsharp.Utilities
 
 			return n;
 		}
-		public string ReadFile(string s)
+		public static string ReadFile(string s)
 		{
 			var cmd = CliCommand.Create(Scope.AdbShell, "cat {0}", s);
 			var res = CliResult.Run(cmd, DataType.String);
@@ -89,7 +83,7 @@ namespace Androsharp.Utilities
 			return device;
 		}
 
-		public void Reset()
+		public static void Reset()
 		{
 			// adb shell "rm /data/local/tmp/busybox"
 
@@ -98,7 +92,7 @@ namespace Androsharp.Utilities
 			var rmResult = CliResult.Run(rmCmd);
 		}
 
-		public void Setup()
+		public static void Setup()
 		{
 			//
 			// adb push busybox /data/local/tmp/busybox
@@ -129,9 +123,5 @@ namespace Androsharp.Utilities
 			}
 		}
 
-		public override string ToString()
-		{
-			return string.Format("Serial: {0}", Serial);
-		}
 	}
 }

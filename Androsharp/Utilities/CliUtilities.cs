@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Androsharp.CopyAndConvert;
 
 namespace Androsharp.Utilities
 {
@@ -121,6 +122,17 @@ namespace Androsharp.Utilities
 			return patternBytes;
 		}
 
+		// todo: slow
+		public static byte[] ReadToEnd2(Stream stream)
+		{
+			using (var memoryStream = new MemoryStream())
+			{
+				stream.CopyTo(memoryStream, (int) (CopyConvert.BlockSize/2));
+				return memoryStream.ToArray();
+			}
+		}
+
+		// todo: slow
 		public static byte[] ReadToEnd(Stream stream)
 		{
 			long originalPosition = 0;
@@ -131,8 +143,10 @@ namespace Androsharp.Utilities
 			}
 
 
-			try {
-				byte[] readBuffer = new byte[4096];
+			try
+			{
+				const int BUFFER_SIZE = 8096 * 256;
+				byte[] readBuffer = new byte[BUFFER_SIZE];
 
 				int totalBytesRead = 0;
 				int bytesRead;
@@ -165,6 +179,8 @@ namespace Androsharp.Utilities
 				if (stream.CanSeek) {
 					stream.Position = originalPosition;
 				}
+
+				stream.Close();
 			}
 		}
 	}
