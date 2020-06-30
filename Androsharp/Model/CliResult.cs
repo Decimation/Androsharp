@@ -50,6 +50,11 @@ namespace Androsharp.Model
 				case DataType.ByteArray:
 					cliResult.Data = CliUtilities.ReadToEnd(stdOut.BaseStream);
 					break;
+				case DataType.Unknown:
+					break;
+				case DataType.String:
+					cliResult.Data = stdOut.ReadToEnd();
+					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(dt), dt, null);
 			}
@@ -68,7 +73,16 @@ namespace Androsharp.Model
 			rg = null;
 			return false;
 		}
-		
+		public bool GetStr(out string? s)
+		{
+			if (DataType == DataType.String) {
+				s = Data as string;
+				return true;
+			}
+
+			s = null;
+			return false;
+		}
 		public bool GetLines(out string[]? rg)
 		{
 			if (DataType == DataType.StringArray) {

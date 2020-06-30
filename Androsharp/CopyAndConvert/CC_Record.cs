@@ -1,6 +1,13 @@
+using System;
+using System.Text;
+// ReSharper disable InconsistentNaming
+
 namespace Androsharp.CopyAndConvert
 {
-	public class CC_Record
+	/// <summary>
+	/// DD record
+	/// </summary>
+	public sealed class CC_Record
 	{
 		/// <summary>
 		///
@@ -13,5 +20,6 @@ namespace Androsharp.CopyAndConvert
 		/// <see cref="CopyConvert.FD_DD_BINARY"/>
 		/// </summary>
 		public byte[] BinaryRaw { get; internal set; }
+		
 	}
 }

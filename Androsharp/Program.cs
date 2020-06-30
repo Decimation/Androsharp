@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -13,25 +15,24 @@ namespace Androsharp
 {
 	public static class Program
 	{
+		
+		[SuppressMessage("ReSharper.DPA", "DPA0003: Excessive memory allocations in LOH")]
 		private static void Main(string[] args)
 		{
-			var cc = new CC_Arguments
-			{
-				arg_if = "sdcard/image.jpg",
-				arg_ibs = 128,
-				arg_count = 1,
-				arg_skip = 0,
-				arg_seek = 0,
-				arg_iflag = InputFileFlags.None,
-				BinaryRedirect = null,
-				StatsRedirect = "sdcard/dd_stats"
-			};
+			var local = @"C:\Users\Deci\Desktop\kino.mkv";
+			var dest = @"C:\Users\Deci\Desktop\kino_out.mkv";
+			var remote = "sdcard/kino.mkv";
+			
 
 			var adb = Android.Value;
 
-			var ddCmd = cc.Compile();
+			
 
-			Console.WriteLine(ddCmd);
+			var remRg=CopyConvert.ReadRem(remote,dest);
+
+			var eq = CopyConvert.Compare(local, dest);
+
+			Console.WriteLine(eq);
 		}
 	}
 }

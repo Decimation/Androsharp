@@ -46,6 +46,30 @@ namespace Androsharp.Utilities
 			}
 		}
 
+		public long RemoteSize(string s)
+		{
+			// sprintf(buf, "wc -c < \"%s\"", remoteFile);
+			
+			var cmd = CliCommand.Create(Scope.AdbShell, "\"wc -c < \"{0}\"\"", s);
+			var res = CliResult.Run(cmd, DataType.String);
+
+			//Console.WriteLine(res.Data);
+			var n = long.Parse((string) res.Data);
+
+
+			return n;
+		}
+		public string ReadFile(string s)
+		{
+			var cmd = CliCommand.Create(Scope.AdbShell, "cat {0}", s);
+			var res = CliResult.Run(cmd, DataType.String);
+
+
+			res.GetStr(out var resStr);
+
+			return resStr;
+		}
+
 		private static string? GetSerial()
 		{
 			var devices       = CliCommand.Create(Scope.Adb, "devices");

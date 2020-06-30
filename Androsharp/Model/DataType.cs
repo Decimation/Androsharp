@@ -6,6 +6,7 @@ namespace Androsharp.Model
 		None,
 		
 		StringArray,
+		String,
 		ByteArray,
 	}
 }

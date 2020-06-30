@@ -22,7 +22,7 @@ namespace Androsharp.Utilities
 		/// <returns><c>cmd.exe</c> process</returns>
 		public static Process Shell(string ccmd)
 		{
-			Console.WriteLine(">> {0}",ccmd);
+			//Console.WriteLine(">> {0}",ccmd);
 
 			var startInfo = new ProcessStartInfo
 			{
