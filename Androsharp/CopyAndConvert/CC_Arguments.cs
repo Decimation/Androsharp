@@ -16,17 +16,35 @@ namespace Androsharp.CopyAndConvert
 	/// </summary>
 	public sealed class CC_Arguments : ICommand
 	{
+		/// <summary>
+		/// <c>if</c>
+		/// </summary>
 		public string arg_if { get; internal set; }
 
+		
+		/// <summary>
+		/// <c>ibs</c>
+		/// </summary>
 		public long arg_ibs { get; internal set; }
 
+		/// <summary>
+		/// <c>count</c>
+		/// </summary>
 		public int arg_count { get; internal set; }
 
+		/// <summary>
+		/// <c>skip</c>
+		/// </summary>
 		public int arg_skip { get; internal set; }
 
+		/// <summary>
+		/// <c>seek</c>
+		/// </summary>
 		public int arg_seek { get; internal set; }
 
-
+		/// <summary>
+		/// <c>iflag</c>
+		/// </summary>
 		public InputFileFlags arg_iflag { get; internal set; }
 
 		/// <summary>

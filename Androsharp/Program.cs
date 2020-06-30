@@ -15,24 +15,20 @@ namespace Androsharp
 {
 	public static class Program
 	{
-		
 		[SuppressMessage("ReSharper.DPA", "DPA0003: Excessive memory allocations in LOH")]
 		private static void Main(string[] args)
 		{
-			var local = @"C:\Users\Deci\Desktop\kino.mkv";
-			var dest = @"C:\Users\Deci\Desktop\kino_out.mkv";
-			var remote = "sdcard/kino.mkv";
 			
 
-			var adb = Android.Value;
+			var t3 = new TestInfo()
+			{
+				local  = @"C:\Users\Deci\Desktop\huge.zip",
+				dest   = @"C:\Users\Deci\Desktop\huge_out.zip",
+				remote = "sdcard/huge.zip",
+			};
 
+			CopyConvert.Repull(t3.remote, t3.dest);
 			
-
-			var remRg=CopyConvert.ReadRem(remote,dest);
-
-			var eq = CopyConvert.Compare(local, dest);
-
-			Console.WriteLine(eq);
 		}
 	}
 }

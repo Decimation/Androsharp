@@ -96,12 +96,10 @@ namespace Androsharp.CopyAndConvert
 		/// <summary>
 		/// Block size
 		/// </summary>
-		private const long BlockSize = 8192 * 256;
+		private const long BlockSize = 8192 * 4096;
 
-		
-		
-		
-		public static CC_Record Create(CC_Arguments args)
+
+		public static CC_Record ReadRecord(CC_Arguments args)
 		{
 			var ddCmdStr = args.Compile();
 			ddCmdStr = string.Format("\"{0}\"", ddCmdStr);
@@ -111,12 +109,11 @@ namespace Androsharp.CopyAndConvert
 
 			var ddRes = CliResult.Run(ddCmd, DataType.ByteArray);
 
-			var ccRec = new CC_Record();
-			ccRec.BinaryRaw = (byte[]) ddRes.Data;
-			//ccRec.StatsRaw  = Android.Value.ReadFile(args.StatsRedirect);
-
-
-			// todo - left off here
+			var ccRec = new CC_Record
+			{
+				BinaryRaw = (byte[]) ddRes.Data,
+				//StatsRaw = Android.Value.ReadFile(args.StatsRedirect)
+			};
 
 
 			return ccRec;
@@ -127,36 +124,41 @@ namespace Androsharp.CopyAndConvert
 			return (long) Math.Ceiling((double) (size / buf));
 		}
 
-		public static bool Compare(string control, string ret)
+
+		private static double ToMegabytes(double d)
 		{
-			var fmiCtrl = Common.ReadInfo(control);
-			var fmiRet  = Common.ReadInfo(ret);
+			// todo
 
-
-
-			var sizeEq = fmiCtrl.Size == fmiRet.Size;
-			Console.WriteLine("Size equal: {0}", sizeEq);
-
-			var md5Eq = fmiCtrl.MD5.SequenceEqual(fmiRet.MD5);
-			Console.WriteLine("Md5 equal: {0}", md5Eq);
-			
-			var sha1Eq = fmiCtrl.SHA1.SequenceEqual(fmiRet.SHA1);
-			Console.WriteLine("Sha1 equal: {0}", sha1Eq);
-			
-			var dataEq = fmiCtrl.Data.SequenceEqual(fmiRet.Data);
-			Console.WriteLine("Data equal: {0}", dataEq);
-			
-			return fmiCtrl == fmiRet;
+			return d / 1024 / 1024;
 		}
 
-		public static byte[] ReadRem(string rem, string dest)
+		public static byte[] Repull(string rem, string dest)
 		{
 			long remSize = Android.Value.RemoteSize(rem);
 			long nBlocks = SizeToBlocks(remSize, BlockSize);
 
+			if (BlockSize >= remSize) {
+				nBlocks = 1;
+			}
+
+			var blockSizeMB = ((double) BlockSize) / 1024 / 1024;
+
+			Console.WriteLine("Remote size: {0}\nBlock size: {1} ({2} MB)\n", remSize, BlockSize, blockSizeMB);
+
+
+			// int capacity = (int) remSize;
+
 			var rg = new List<byte>();
 
+			double maxMegabytesPerSec = 0;
+
+			double rateSum = 0;
+
+			const int RND = 2;
+
 			for (int i = 0; i <= nBlocks; i++) {
+				var start = DateTimeOffset.Now;
+
 				var ccArg = new CC_Arguments
 				{
 					arg_count = 1,
@@ -166,16 +168,39 @@ namespace Androsharp.CopyAndConvert
 				};
 
 
-				var res = Create(ccArg);
+				var res    = ReadRecord(ccArg);
+				var resBin = res.BinaryRaw;
 
-				rg.AddRange(res.BinaryRaw);
+				rg.AddRange(resBin);
 
-				Console.Write("\r{0}/{1}", i, nBlocks);
+				var end = DateTime.Now;
+
+				var duration = end - start;
+
+
+				var bytesPerSec     = resBin.Length / duration.TotalSeconds;
+				var megabytesPerSec = Math.Round(bytesPerSec / 1024 / 1024, RND);
+
+
+				if (megabytesPerSec > maxMegabytesPerSec) {
+					maxMegabytesPerSec = megabytesPerSec;
+				}
+
+				rateSum += megabytesPerSec;
+
+				var avgMegabytesPerSec = Math.Round(rateSum / i, RND);
+
+				var percent = ((double) rg.Count) / remSize;
+
+				Console.Write("\r{0}/{1} ({2} MB/sec) ({3} MB/sec max) ({4} MB/sec avg) ({5:P})",
+				              i, nBlocks, megabytesPerSec, maxMegabytesPerSec, avgMegabytesPerSec, percent);
 			}
 
 			Console.WriteLine();
 
 			var brg = rg.ToArray();
+
+			Console.WriteLine("Writing data to {0}", dest);
 
 			File.WriteAllBytes(dest, brg);
 
