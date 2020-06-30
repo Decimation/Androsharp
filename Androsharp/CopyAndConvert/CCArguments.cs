@@ -95,7 +95,7 @@ namespace Androsharp.CopyAndConvert
 			
 			
 			sb.AppendFormat("dd if={0} ibs={1} skip={2} count={3} seek={4}",
-			                arg_if, arg_ibs, arg_skip, arg_count, arg_seek);
+			                arg_if, arg_ibs + CopyConvert.BlockUnits, arg_skip, arg_count, arg_seek);
 
 			if (arg_iflag != InputFileFlags.None) {
 				sb.AppendFormat(" iflag={0}", arg_iflag.ToString());

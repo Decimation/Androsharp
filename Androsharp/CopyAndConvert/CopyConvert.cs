@@ -6,6 +6,8 @@ using System.Runtime.CompilerServices;
 using Androsharp.Model;
 using Androsharp.Utilities;
 
+using static Androsharp.Utilities.Common;
+
 // ReSharper disable InconsistentNaming
 
 // ReSharper disable ReturnTypeCanBeEnumerable.Global
@@ -96,11 +98,53 @@ namespace Androsharp.CopyAndConvert
 
 		public const int FD_DD_STATS = Unix.FD_StdErr;
 
+
+		/// <summary>
+		/// Maximum recommended block size
+		/// </summary>
+		public static long BlockSizeMaxBytes { get; } = 8192 * 4096;
+
 		/// <summary>
 		/// Block size
 		/// </summary>
-		internal const long BlockSize = 8192 * 4096;
+		public static long BlockUnits { get; set; } = 16;
 
+		public static string BlockSizeUnit { get; set; } = "M";
+
+		/// <summary>
+		/// Block size
+		/// </summary>
+		public static long BlockSize {
+			get {
+				
+				// N may be suffixed by c (1), w (2), b (512), kB (1000), k (1024), MB, M, GB, G
+				
+				long mul = BlockSizeUnit switch
+				{
+					"c" => 1,
+					"w" => 2,
+					"b" => 512,
+					"kB" => U1,
+					"k" => U2,
+					"MB" => U1 * U1,
+					"M" => U2 * U2,
+					"GB" => U1 * U1 * U1,
+					"G" => U2 * U2 * U2,
+					_ => 1
+				};
+
+				return BlockUnits * mul;
+			}
+		}
+
+		private static string DefaultOutput {
+			get {
+#if DEBUG
+				return Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+#endif
+				return Environment.CurrentDirectory;
+			}
+		}
 
 		public static CCRecord ReadRecord(CCArguments args)
 		{
@@ -109,7 +153,7 @@ namespace Androsharp.CopyAndConvert
 
 			var ddCmd = CliCommand.Create(Scope.AdbExecOut, ddCmdStr);
 
-			
+
 			var ddRes = CliResult.Run(ddCmd, DataType.ByteArray);
 
 			var ccRec = new CCRecord();
@@ -127,17 +171,36 @@ namespace Androsharp.CopyAndConvert
 			return ccRec;
 		}
 
-		private static long SizeToBlocks(long size, long buf)
-		{
-			return (long) Math.Ceiling((double) (size / buf));
-		}
+		private static long SizeToBlocks(long size, long buf) => (long) Math.Ceiling((double) (size / buf));
 
+		public static void Repull(string rem)
+		{
+			var fn  = Path.GetFileNameWithoutExtension(rem);
+			var ext = Path.GetExtension(rem);
+
+			var nn = fn + "_out" + ext;
+
+			var dest = Path.Combine(DefaultOutput, nn);
+
+
+			Repull(rem, dest);
+		}
 
 		/// <summary>
 		/// Repull implementation
 		/// </summary>
 		public static void Repull(string rem, string dest)
 		{
+			if (BlockSize >= BlockSizeMaxBytes) {
+				Console.WriteLine("Warning: Using a block size larger than the recommended maximum");
+			}
+
+			Console.WriteLine("{0} >> {1}", rem, dest);
+
+			if (File.Exists(dest)) {
+				File.Delete(dest);
+			}
+
 			long remSize = Android.RemoteSize(rem);
 			long nBlocks = SizeToBlocks(remSize, BlockSize);
 
@@ -145,21 +208,18 @@ namespace Androsharp.CopyAndConvert
 				nBlocks = 1;
 			}
 
-			var blockSizeMB = Common.ToMegabytes(((double) BlockSize));
-
-			Console.WriteLine("Remote size: {0}\nBlock size: {1} ({2} MB)\n", remSize, BlockSize, blockSizeMB);
-
-
-			// int capacity = (int) remSize;
-
+			Console.WriteLine();
+			Console.WriteLine("Remote size: {0} bytes", remSize);
+			Console.WriteLine("Block size: {0} bytes ({1} bu)\n", BlockSize, BlockUnits);
 
 			double rateSum = 0;
 
 			const int RND = 2;
 
 			int rgi = 0;
+
 			var stream = new FileStream(dest, FileMode.Append);
-			
+
 			for (int i = 0; i <= nBlocks; i++) {
 				var start = DateTimeOffset.Now;
 
@@ -171,18 +231,15 @@ namespace Androsharp.CopyAndConvert
 					arg_skip  = i,
 				};
 
-				
+
 				var res    = ReadRecord(ccArg);
 				var resBin = res.BinaryRaw;
-
 
 				lock (resBin) {
 					// ~123ms
 					stream.Write(resBin, 0, resBin.Length);
 					stream.Flush();
 					rgi += resBin.Length;
-
-					
 				}
 
 
@@ -194,7 +251,6 @@ namespace Androsharp.CopyAndConvert
 				var bytesPerSec     = resBin.Length / duration.TotalSeconds;
 				var megabytesPerSec = Math.Round(Common.ToMegabytes(bytesPerSec), RND);
 
-
 				rateSum += megabytesPerSec;
 
 				var avgMegabytesPerSec = Math.Round(rateSum / i, RND);
@@ -203,11 +259,17 @@ namespace Androsharp.CopyAndConvert
 
 				Console.Write("\r{0}/{1} ({2} MB/sec) ({3} MB/sec avg) ({4:P})",
 				              i, nBlocks, megabytesPerSec, avgMegabytesPerSec, percent);
+
+
+				//Console.Clear();
 			}
+
+			stream.Flush();
+			stream.Close();
 
 			Console.WriteLine();
 
-			Console.WriteLine("Writing data to {0}", dest);
+			Console.WriteLine("Wrote data to {0}", dest);
 		}
 	}
 }

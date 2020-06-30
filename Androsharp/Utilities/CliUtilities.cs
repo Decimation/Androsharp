@@ -17,76 +17,7 @@ namespace Androsharp.Utilities
 
 		private const char GT       = '>';
 		private const char ASTERISK = '*';
-		
-		/// <summary>
-		///     <returns>String value after [last] <paramref name="a"/></returns>
-		/// </summary>
-		internal static string SubstringAfter(this string value, string a)
-		{
-			int posA = value.LastIndexOf(a, StringComparison.Ordinal);
-			if (posA == -1)
-				return String.Empty;
 
-			int adjustedPosA = posA + a.Length;
-			return adjustedPosA >= value.Length ? String.Empty : value.Substring(adjustedPosA);
-		}
-
-		/// <summary>
-		///     <returns>String value after [first] <paramref name="a"/></returns>
-		/// </summary>
-		internal static string SubstringBefore(this string value, string a)
-		{
-			int posA = value.IndexOf(a, StringComparison.Ordinal);
-			return posA == -1 ? String.Empty : value.Substring(0, posA);
-		}
-
-		/// <summary>
-		///     <returns>String value between [first] <paramref name="a"/> and [last] <paramref name="b"/></returns>
-		/// </summary>
-		internal static string SubstringBetween(this string value, string a, string b)
-		{
-			int posA = value.IndexOf(a, StringComparison.Ordinal);
-			int posB = value.LastIndexOf(b, StringComparison.Ordinal);
-
-			if (posA == -1 || posB == -1)
-				return String.Empty;
-
-
-			int adjustedPosA = posA + a.Length;
-			return adjustedPosA >= posB ? String.Empty : value.Substring(adjustedPosA, posB - adjustedPosA);
-		}
-
-		public static void Compare(byte[] expected, byte[] actual, bool onlyShowMismatches = true)
-		{
-			var min = actual.Length < expected.Length ? actual : expected;
-			var max = actual.Length > expected.Length ? actual : expected;
-
-			Console.WriteLine("Expected length: {0}\nActual length: {1}\n", expected.Length, actual.Length);
-
-			bool allEq = expected.SequenceEqual(actual);
-			Console.WriteLine("Full sequence equal: {0}", allEq);
-
-			bool minEq = min.SequenceEqual(actual.Take(min.Length));
-			Console.WriteLine("Actual sequence equal: {0} ({1}/{2})\n", minEq, min.Length, max.Length);
-
-			for (int i = 0; i < min.Length; i++) {
-				var n1 = expected[i];
-				var n2 = actual[i];
-				var eq = n1 == n2;
-				var ch = eq ? RAD_SIGN : MUL_SIGN;
-
-				var sz = string.Format("[#{0}: {1:X} {2:X} {3}] ", i, n1, n2, ch);
-
-				if (!eq && onlyShowMismatches) {
-					Console.Write(sz);
-				}
-				else if (!onlyShowMismatches) {
-					Console.Write(sz);
-				}
-			}
-
-			Console.WriteLine();
-		}
 
 		public static string[] ReadAllLines(StreamReader stream)
 		{
@@ -122,17 +53,8 @@ namespace Androsharp.Utilities
 			return patternBytes;
 		}
 
-		// todo: slow
-		public static byte[] ReadToEnd2(Stream stream)
-		{
-			using (var memoryStream = new MemoryStream())
-			{
-				stream.CopyTo(memoryStream, (int) (CopyConvert.BlockSize/2));
-				return memoryStream.ToArray();
-			}
-		}
 
-		// todo: slow
+		// todo: !!! slow !!! 
 		public static byte[] ReadToEnd(Stream stream)
 		{
 			long originalPosition = 0;
@@ -146,6 +68,7 @@ namespace Androsharp.Utilities
 			try
 			{
 				const int BUFFER_SIZE = 8096 * 256;
+				
 				byte[] readBuffer = new byte[BUFFER_SIZE];
 
 				int totalBytesRead = 0;

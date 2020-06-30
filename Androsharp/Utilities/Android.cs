@@ -23,7 +23,6 @@ namespace Androsharp.Utilities
 		public static string? Serial { get; }
 
 
-
 		public static bool HasBusybox {
 			get {
 				//
@@ -43,7 +42,7 @@ namespace Androsharp.Utilities
 		public static long RemoteSize(string s)
 		{
 			// sprintf(buf, "wc -c < \"%s\"", remoteFile);
-			
+
 			var cmd = CliCommand.Create(Scope.AdbShell, "\"wc -c < \"{0}\"\"", s);
 			var res = CliResult.Run(cmd, DataType.String);
 
@@ -53,6 +52,7 @@ namespace Androsharp.Utilities
 
 			return n;
 		}
+
 		public static string ReadFile(string s)
 		{
 			var cmd = CliCommand.Create(Scope.AdbShell, "cat {0}", s);
@@ -122,6 +122,5 @@ namespace Androsharp.Utilities
 				throw new CliException("Busybox failure to device");
 			}
 		}
-
 	}
 }

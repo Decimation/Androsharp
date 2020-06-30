@@ -18,16 +18,11 @@ namespace Androsharp
 		[SuppressMessage("ReSharper.DPA", "DPA0003: Excessive memory allocations in LOH")]
 		private static void Main(string[] args)
 		{
+
+			var fn = "vid.mkv";
+			var remote = "sdcard/vid.mkv";
 			
-
-			var t3 = new TestInfo()
-			{
-				local  = @"C:\Users\Deci\Desktop\huge.zip",
-				dest   = @"C:\Users\Deci\Desktop\huge_out.zip",
-				remote = "sdcard/huge.zip",
-			};
-
-			CopyConvert.Repull(t3.remote, t3.dest);
+			CopyConvert.Repull(remote);
 			
 		}
 	}
