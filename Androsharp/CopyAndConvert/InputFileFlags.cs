@@ -10,11 +10,11 @@ namespace Androsharp.CopyAndConvert
 		/// <summary>
 		/// <c>skip_bytes</c>
 		/// </summary>
-		skip_bytes,
+		SkipBytes,
 		
 		/// <summary>
 		/// <c>fullblock</c>
 		/// </summary>
-		fullblock
+		FullBlock
 	}
 }

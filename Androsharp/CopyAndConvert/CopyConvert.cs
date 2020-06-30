@@ -1,12 +1,13 @@
+#region
+
+#nullable enable
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using Androsharp.Model;
 using Androsharp.Utilities;
-
 using static Androsharp.Utilities.Common;
+
+#endregion
 
 // ReSharper disable InconsistentNaming
 
@@ -88,38 +89,50 @@ namespace Androsharp.CopyAndConvert
 
 
 	/// <summary>
-	/// DD utilities
+	///     DD utilities
 	/// </summary>
 	public static class CopyConvert
 	{
+
+		static CopyConvert()
+		{
+			Android.Setup();
+		}
+		
+		
 		// adb shell "dd if=sdcard/image.jpg bs=128 skip=0 count=1 2>>/dev/null"
 
-		public const int FD_DD_BINARY = Unix.FD_StdOut;
+		public const int FD_DD_BINARY = Unix.FD_STDOUT;
 
-		public const int FD_DD_STATS = Unix.FD_StdErr;
+		public const int FD_DD_STATS = Unix.FD_STDERR;
 
 
 		/// <summary>
-		/// Maximum recommended block size
+		///     Maximum recommended block size tested
 		/// </summary>
-		public static long BlockSizeMaxBytes { get; } = 8192 * 4096;
+		public const long BlockSizeMaxBytes = 8192 * 4096;
 
 		/// <summary>
-		/// Block size
+		///     Block size value that will be multiplied by the <see cref="BlockUnit" /> unit multiple to calculate
+		///     <see cref="BlockSize" />
 		/// </summary>
-		public static long BlockUnits { get; set; } = 16;
-
-		public static string BlockSizeUnit { get; set; } = "M";
+		public static long BlockValue { get; set; } = 16;
 
 		/// <summary>
-		/// Block size
+		///     Block size data unit that will determine the multiple by which <see cref="BlockValue" /> is multiplied
+		///     to calculate <see cref="BlockSize" />
+		/// </summary>
+		public static string BlockUnit { get; set; } = "M";
+
+		/// <summary>
+		///     Block size: <see cref="BlockValue" /> <c>*</c> <see cref="BlockUnit" /> multiple <c>=</c>
+		///     <see cref="BlockSize" /> bytes
 		/// </summary>
 		public static long BlockSize {
 			get {
-				
 				// N may be suffixed by c (1), w (2), b (512), kB (1000), k (1024), MB, M, GB, G
-				
-				long mul = BlockSizeUnit switch
+
+				long mul = BlockUnit switch
 				{
 					"c" => 1,
 					"w" => 2,
@@ -133,11 +146,11 @@ namespace Androsharp.CopyAndConvert
 					_ => 1
 				};
 
-				return BlockUnits * mul;
+				return BlockValue * mul;
 			}
 		}
 
-		private static string DefaultOutput {
+		public static string DefaultOutput {
 			get {
 #if DEBUG
 				return Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
@@ -146,20 +159,22 @@ namespace Androsharp.CopyAndConvert
 			}
 		}
 
-		public static CCRecord ReadRecord(CCArguments args)
+		public static bool RunChecks { get; set; } = true;
+		
+		private static CCRecord ReadRecord(CCArguments args)
 		{
-			var ddCmdStr = args.Compile();
-			ddCmdStr = string.Format("\"{0}\"", ddCmdStr);
+			string ddCmdStr = args.Compile();
+			ddCmdStr = String.Format("\"{0}\"", ddCmdStr);
 
-			var ddCmd = CliCommand.Create(Scope.AdbExecOut, ddCmdStr);
+			var ddCmd = CliCommand.Create(CliScope.AdbExecOut, ddCmdStr);
 
 
-			var ddRes = CliResult.Run(ddCmd, DataType.ByteArray);
+			var ddRes = CliResult.Run(ddCmd, CliDataType.ByteArray);
 
 			var ccRec = new CCRecord();
 
 			lock (ccRec) {
-				ccRec.BinaryRaw = (byte[]) ddRes.Data;
+				ccRec.BinaryRaw = ddRes.ByteArray;
 				//ccRec.StatsRaw = Android.Value.ReadFile(args.StatsRedirect);
 			}
 
@@ -171,91 +186,91 @@ namespace Androsharp.CopyAndConvert
 			return ccRec;
 		}
 
-		private static long SizeToBlocks(long size, long buf) => (long) Math.Ceiling((double) (size / buf));
-
-		public static void Repull(string rem)
-		{
-			var fn  = Path.GetFileNameWithoutExtension(rem);
-			var ext = Path.GetExtension(rem);
-
-			var nn = fn + "_out" + ext;
-
-			var dest = Path.Combine(DefaultOutput, nn);
-
-
-			Repull(rem, dest);
-		}
+		private static long SizeToBlocks(long size, long blockSize) => (long) Math.Ceiling((double) (size / blockSize));
+		
 
 		/// <summary>
-		/// Repull implementation
+		///     Repull implementation
 		/// </summary>
-		public static void Repull(string rem, string dest)
+		public static void Repull(string remote, string? dest = null)
 		{
+			if (dest == null) {
+				string? fn  = Path.GetFileNameWithoutExtension(remote);
+				string? ext = Path.GetExtension(remote);
+
+				string nn = fn + "_out" + ext;
+
+				dest = Path.Combine(DefaultOutput, nn);
+			}
+			
 			if (BlockSize >= BlockSizeMaxBytes) {
 				Console.WriteLine("Warning: Using a block size larger than the recommended maximum");
 			}
-
-			Console.WriteLine("{0} >> {1}", rem, dest);
 
 			if (File.Exists(dest)) {
 				File.Delete(dest);
 			}
 
-			long remSize = Android.RemoteSize(rem);
+			long remSize = Android.GetFileSize(remote);
 			long nBlocks = SizeToBlocks(remSize, BlockSize);
 
 			if (BlockSize >= remSize) {
 				nBlocks = 1;
 			}
-
-			Console.WriteLine();
+			
+			
+			Console.WriteLine("\nRemote file: {0}", remote);
 			Console.WriteLine("Remote size: {0} bytes", remSize);
-			Console.WriteLine("Block size: {0} bytes ({1} bu)\n", BlockSize, BlockUnits);
 
+			Console.WriteLine("\nBlock size: {0} bytes ({1} bu)", BlockSize, BlockValue);
+			
+			Console.WriteLine("\nDestination file: {0}", dest);
+			
+			
 			double rateSum = 0;
 
 			const int RND = 2;
 
-			int rgi = 0;
+			int nbytes = 0;
 
-			var stream = new FileStream(dest, FileMode.Append);
+			var outStream = new FileStream(dest, FileMode.Append);
 
 			for (int i = 0; i <= nBlocks; i++) {
+				
 				var start = DateTimeOffset.Now;
 
 				var ccArg = new CCArguments
 				{
-					arg_count = 1,
-					arg_ibs   = BlockSize,
-					arg_if    = rem,
-					arg_skip  = i,
+					Count = 1,
+					InputBlockSize   = BlockSize,
+					InputFile    = remote,
+					Skip  = i,
 				};
 
 
-				var res    = ReadRecord(ccArg);
-				var resBin = res.BinaryRaw;
+				var    res    = ReadRecord(ccArg);
+				byte[] resBin = res.BinaryRaw;
 
 				lock (resBin) {
 					// ~123ms
-					stream.Write(resBin, 0, resBin.Length);
-					stream.Flush();
-					rgi += resBin.Length;
+					outStream.Write(resBin, 0, resBin.Length);
+					outStream.Flush();
+					nbytes += resBin.Length;
 				}
 
 
 				var end = DateTime.Now;
 
 				var duration = end - start;
-
-
-				var bytesPerSec     = resBin.Length / duration.TotalSeconds;
-				var megabytesPerSec = Math.Round(Common.ToMegabytes(bytesPerSec), RND);
+				
+				double bytesPerSec     = resBin.Length / duration.TotalSeconds;
+				double megabytesPerSec = Math.Round(ToMegabytes(bytesPerSec), RND);
 
 				rateSum += megabytesPerSec;
 
-				var avgMegabytesPerSec = Math.Round(rateSum / i, RND);
+				double avgMegabytesPerSec = Math.Round(rateSum / i, RND);
 
-				var percent = ((double) rgi) / remSize;
+				double percent = (double) nbytes / remSize;
 
 				Console.Write("\r{0}/{1} ({2} MB/sec) ({3} MB/sec avg) ({4:P})",
 				              i, nBlocks, megabytesPerSec, avgMegabytesPerSec, percent);
@@ -264,12 +279,23 @@ namespace Androsharp.CopyAndConvert
 				//Console.Clear();
 			}
 
-			stream.Flush();
-			stream.Close();
+			outStream.Flush();
+			outStream.Close();
 
-			Console.WriteLine();
+			Console.WriteLine("\n\nWrote data to {0}!\n\n", dest);
 
-			Console.WriteLine("Wrote data to {0}", dest);
+			if (RunChecks) {
+				var destSize = new FileInfo(dest).Length;
+				
+				var destSha1 = Sha1_Hash.GetFileHashString(dest);
+
+				var remSha1 = Android.GetFileSha1Hash(remote);
+
+				Console.WriteLine("Size equal: {0} | Sha1 equal: {1}", 
+				                  CliUtilities.GetSuccessChar(destSize, remSize),
+				                  CliUtilities.GetSuccessChar(destSha1, remSha1));
+				
+			}
 		}
 	}
 }

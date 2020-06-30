@@ -3,11 +3,11 @@ using System;
 
 namespace Androsharp.Model
 {
-	public sealed class CliException : Exception
+	internal sealed class CliException : Exception
 	{
-		public CliException() { }
-		
-		public CliException(string? message) : base(message) { }
+		internal CliException() { }
+
+		internal CliException(string? message) : base(message) { }
 		
 	}
 }

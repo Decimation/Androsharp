@@ -8,8 +8,12 @@
         <DefineConstants>JETBRAINS_ANNOTATIONS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <!--<Nullable>enable</Nullable>-->
-        
-        
+
+        <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+
+        <PublishSingleFile>true</PublishSingleFile>
+
+        <PublishTrimmed>true</PublishTrimmed>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using JetBrains.Annotations;
+#nullable enable
 // ReSharper disable InconsistentNaming
 
 namespace Androsharp.CopyAndConvert
@@ -14,7 +16,7 @@ namespace Androsharp.CopyAndConvert
 		///
 		/// <see cref="CopyConvert.FD_DD_STATS"/>
 		/// </summary>
-		public string StatsRaw { get; internal set; }
+		public string? StatsRaw { get; internal set; }
 		
 		/// <summary>
 		///

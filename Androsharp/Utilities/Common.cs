@@ -3,42 +3,51 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Text;
+using Androsharp.Model;
+
 // ReSharper disable InconsistentNaming
 
 namespace Androsharp.Utilities
 {
-	public static class Common
+	internal static class Common
 	{
+		public const int U1 = 1000;
+
+		public const int U2 = 1024;
+		
 		internal static readonly HashAlgorithm MD5_Hash = MD5.Create();
 
 		internal static readonly HashAlgorithm Sha1_Hash = SHA1.Create();
 
-		public static IEnumerable<List<T>> SplitList<T>(List<T> locations, int nSize = 30)
-		{
-			for (int i = 0; i < locations.Count; i += nSize) {
-				yield return locations.GetRange(i, Math.Min(nSize, locations.Count - i));
-			}
-		}
-		
-		public static void AppendAllBytes(string path, byte[] bytes)
-		{
-			//argument-checking here.
-
-			using (var stream = new FileStream(path, FileMode.Append))
-			{
-				stream.Write(bytes, 0, bytes.Length);
-			}
-		}
-		public const int U1 = 1000;
-		public const  int U2 = 1024;
-
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static double ToMegabytes(double d)
+		internal static double ToMegabytes(double d)
 		{
 			// todo
 
-			
 			return d / U1 / U1;
+		}
+
+		public static string GetHashString(byte[] hash)
+		{
+			StringBuilder sb = new StringBuilder();
+			foreach (byte b in hash)
+				sb.Append(b.ToString("X2"));
+
+			return sb.ToString();
+		}
+
+		public static byte[] GetFileHash(this HashAlgorithm hash, string s)
+		{
+			using var destStream = File.OpenRead(s);
+			var       hashValue  = hash.ComputeHash(destStream);
+
+
+			return hashValue;
+		}
+		public static string GetFileHashString(this HashAlgorithm hash, string s)
+		{
+			return GetHashString(hash.GetFileHash(s));
 		}
 
 		/// <summary>
@@ -78,5 +87,7 @@ namespace Androsharp.Utilities
 			int adjustedPosA = posA + a.Length;
 			return adjustedPosA >= posB ? String.Empty : value.Substring(adjustedPosA, posB - adjustedPosA);
 		}
+
+		internal const string FMT_ARG = "fmt";
 	}
 }

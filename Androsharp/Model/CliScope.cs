@@ -1,6 +1,6 @@
 namespace Androsharp.Model
 {
-	public enum Scope
+	public enum CliScope
 	{
 		None,
 		Adb,

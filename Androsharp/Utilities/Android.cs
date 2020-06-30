@@ -20,18 +20,18 @@ namespace Androsharp.Utilities
 		/// <summary>
 		/// Device serial
 		/// </summary>
-		public static string? Serial { get; }
+		public static string? Serial { get; } = GetSerial();
 
-
+		public static bool HasDevice => Serial != null;
+		
 		public static bool HasBusybox {
 			get {
 				//
 				// Check busybox status
 				//
-
-
-				CliCommand bbCmd    = CliCommand.Create(Scope.AdbExecOut, REMOTE_BUSYBOX_EXE);
-				var        bbResult = CliResult.Run(bbCmd, DataType.StringArray);
+				
+				CliCommand bbCmd    = CliCommand.Create(CliScope.AdbExecOut, REMOTE_BUSYBOX_EXE);
+				var        bbResult = CliResult.Run(bbCmd, CliDataType.StringArray);
 				var        bbOk     = bbResult.SuccessfulIfLineContains(BUSYBOX_VER);
 
 
@@ -39,12 +39,12 @@ namespace Androsharp.Utilities
 			}
 		}
 
-		public static long RemoteSize(string s)
+		public static long GetFileSize(string s)
 		{
 			// sprintf(buf, "wc -c < \"%s\"", remoteFile);
 
-			var cmd = CliCommand.Create(Scope.AdbShell, "\"wc -c < \"{0}\"\"", s);
-			var res = CliResult.Run(cmd, DataType.String);
+			var cmd = CliCommand.Create(CliScope.AdbShell, "\"wc -c < \"{0}\"\"", s);
+			var res = CliResult.Run(cmd, CliDataType.String);
 
 			//Console.WriteLine(res.Data);
 			var n = long.Parse((string) res.Data);
@@ -53,25 +53,29 @@ namespace Androsharp.Utilities
 			return n;
 		}
 
-		public static string ReadFile(string s)
+		public static string ReadFile(string remote)
 		{
-			var cmd = CliCommand.Create(Scope.AdbShell, "cat {0}", s);
-			var res = CliResult.Run(cmd, DataType.String);
+			var cmd = CliCommand.Create(CliScope.AdbShell, "cat {0}", remote);
+			var res = CliResult.Run(cmd, CliDataType.String);
 
+			return res.String;
+		}
 
-			res.GetStr(out var resStr);
-
-			return resStr;
+		public static string GetFileSha1Hash(string remote)
+		{
+			var cmd = CliCommand.Create(CliScope.AdbShell, "sha1sum \"{0}\"", remote);
+			var res = CliResult.Run(cmd, CliDataType.String);
+			var hash = res.String.Split(" ")[0];
+			
+			return hash.ToUpper();
 		}
 
 		private static string? GetSerial()
 		{
-			var devices       = CliCommand.Create(Scope.Adb, "devices");
-			var devicesResult = CliResult.Run(devices, DataType.StringArray);
+			var devices       = CliCommand.Create(CliScope.Adb, "devices");
+			var devicesResult = CliResult.Run(devices, CliDataType.StringArray);
 
-			if (!devicesResult.GetLines(out var resultLines)) {
-				return null;
-			}
+			var resultLines = devicesResult.StringArray;
 
 
 			var hasDevice = resultLines?.Length >= 2 && resultLines[1] != null;
@@ -87,20 +91,24 @@ namespace Androsharp.Utilities
 		{
 			// adb shell "rm /data/local/tmp/busybox"
 
-			CliCommand rmCmd = CliCommand.Create(Scope.AdbShell, "rm {0}", REMOTE_BUSYBOX_EXE);
+			CliCommand rmCmd = CliCommand.Create(CliScope.AdbShell, "rm {0}", REMOTE_BUSYBOX_EXE);
 
 			var rmResult = CliResult.Run(rmCmd);
 		}
 
 		public static void Setup()
 		{
+			if (!HasDevice) {
+				throw new CliException("No device");
+			}
+			
 			//
 			// adb push busybox /data/local/tmp/busybox
 			//
 
-			var pushCmd = CliCommand.Create(Scope.Adb, "push {0} {1}", BUSYBOX_EXE, REMOTE_BUSYBOX_EXE);
+			var pushCmd = CliCommand.Create(CliScope.Adb, "push {0} {1}", BUSYBOX_EXE, REMOTE_BUSYBOX_EXE);
 
-			var pushResult = CliResult.Run(pushCmd, DataType.StringArray);
+			var pushResult = CliResult.Run(pushCmd, CliDataType.StringArray);
 
 			bool pushOk = pushResult.SuccessfulIfLineContains("busybox: 1 file pushed");
 
@@ -113,9 +121,9 @@ namespace Androsharp.Utilities
 			// chmod +x /data/local/tmp/busybox
 			//
 
-			var chmodCmd = CliCommand.Create(Scope.AdbShell, "chmod +x {0}", REMOTE_BUSYBOX_EXE);
+			var chmodCmd = CliCommand.Create(CliScope.AdbShell, "chmod +x {0}", REMOTE_BUSYBOX_EXE);
 
-			var chmodResult = CliResult.Run(chmodCmd, DataType.StringArray);
+			var chmodResult = CliResult.Run(chmodCmd, CliDataType.StringArray);
 
 
 			if (!HasBusybox) {

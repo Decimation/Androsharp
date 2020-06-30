@@ -18,6 +18,12 @@ namespace Androsharp.Utilities
 		private const char GT       = '>';
 		private const char ASTERISK = '*';
 
+		public static char GetSuccessChar<T>(T a, T b) where T : IEquatable<T>
+		{
+			var eq = a.Equals(b);
+
+			return eq ? RAD_SIGN : MUL_SIGN;
+		}
 
 		public static string[] ReadAllLines(StreamReader stream)
 		{

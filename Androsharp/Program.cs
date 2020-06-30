@@ -13,16 +13,51 @@ using Androsharp.Utilities;
 
 namespace Androsharp
 {
+	/**
+	 * Single file executable build dir
+	 * 
+	 * C:\Users\Deci\RiderProjects\Androsharp\Androsharp\bin\Release\netcoreapp3.0\win10-x64
+	 * C:\Users\Deci\RiderProjects\Androsharp\Androsharp\bin\Release\netcoreapp3.0\win10-x64\publish
+	 * C:\Users\Deci\RiderProjects\Androsharp\Androsharp\bin\Debug\netcoreapp3.0\win10-x64
+	 *
+	 * Single file publish command
+	 *
+	 * dotnet publish -c Release -r win10-x64
+	 *
+	 *
+	 * Copy build
+	 *
+	 * copy Androsharp.exe C:\Library /Y
+	 * copy Androsharp.exe C:\Users\Deci\Desktop /Y
+	 *
+	 * Bundle extract dir
+	 * 
+	 * C:\Users\Deci\AppData\Local\Temp\.net\Androsharp
+	 * DOTNET_BUNDLE_EXTRACT_BASE_DIR 
+	 */
 	public static class Program
 	{
-		[SuppressMessage("ReSharper.DPA", "DPA0003: Excessive memory allocations in LOH")]
 		private static void Main(string[] args)
 		{
+			if (args == null || args.Length < 2) {
+				Console.WriteLine("Insufficient arguments");
+				return;
+			}
 
-			var fn = "vid.mkv";
-			var remote = "sdcard/vid.mkv";
-			
-			CopyConvert.Repull(remote);
+			var fn = args[0];
+
+			if (fn == "repull") {
+				var remote = args[1];
+				var dest = args.Length >= 3 ? args[2] : null;
+
+				CopyConvert.Repull(remote, dest);
+			}
+			else if (fn == "reset") {
+				Android.Reset();
+			}
+			else {
+				Console.WriteLine("Verb not recognized or implemented: {0}", fn);
+			}
 			
 		}
 	}

@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 using JetBrains.Annotations;
-using static Androsharp.Model.Constants;
+using static Androsharp.Utilities.Common;
 
 namespace Androsharp.Model
 {
@@ -11,23 +11,23 @@ namespace Androsharp.Model
 	{
 		public string CommandStub { get; private set; }
 
-		public Scope Scope { get; private set; }
+		public CliScope CliScope { get; private set; }
 
-		private CliCommand(string commandStub, Scope s)
+		private CliCommand(string commandStub, CliScope s)
 		{
 			CommandStub = commandStub;
-			Scope = s;
+			CliScope = s;
 		}
 
 		
 		[StringFormatMethod(FMT_ARG)]
 		public static CliCommand Create(string fmt, params object[] args)
 		{
-			return Create(Scope.None, fmt, args);
+			return Create(CliScope.None, fmt, args);
 		}
 		
 		[StringFormatMethod(FMT_ARG)]
-		public static CliCommand Create(Scope s,string fmt, params object[] args)
+		public static CliCommand Create(CliScope s,string fmt, params object[] args)
 		{
 			var cmd  = string.Format(fmt, args);
 			var ccmd = new CliCommand(cmd,s);
@@ -48,19 +48,15 @@ namespace Androsharp.Model
 			const string SCOPE_ADBSHELL   = "adb shell ";
 			const string SCOPE_ADBEXECOUT = "adb exec-out ";
 
-			switch (Scope) {
-				case Scope.None:
+			switch (CliScope) {
+				case CliScope.None:
 					return CommandStub;
-					break;
-				case Scope.Adb:
+				case CliScope.Adb:
 					return SCOPE_ADB + CommandStub;
-					break;
-				case Scope.AdbShell:
+				case CliScope.AdbShell:
 					return SCOPE_ADBSHELL + CommandStub;
-					break;
-				case Scope.AdbExecOut:
+				case CliScope.AdbExecOut:
 					return SCOPE_ADBEXECOUT + CommandStub;
-					break;
 				default:
 					throw new Exception();
 			}

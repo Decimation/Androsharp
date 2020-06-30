@@ -1,8 +1,7 @@
 namespace Androsharp.Model
 {
-	public enum DataType
+	public enum CliDataType
 	{
-		Unknown,
 		None,
 		
 		StringArray,

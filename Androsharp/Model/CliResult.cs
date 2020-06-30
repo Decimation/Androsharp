@@ -23,13 +23,40 @@ namespace Androsharp.Model
 
 		public object? Data { get; private set; }
 
-		public DataType DataType { get; private set; }
-		
+		public CliDataType DataType { get; private set; }
+
 		public Process? CommandProcess { get; private set; }
 
-		// todo: performance: ~1100ms
+		public byte[] ByteArray {
+			get {
+				return Parse<byte[]>(CliDataType.ByteArray);
+			}
+		}
+
+		public string[] StringArray {
+			get {
+				return Parse<string[]>(CliDataType.StringArray);
+			}
+		}
+
+		public string String {
+			get {
+				return Parse<string>(CliDataType.String);
+			}
+		}
 		
-		public static CliResult Run(CliCommand command, DataType dt = DataType.None)
+		internal T Parse<T>(CliDataType dt)
+		{
+			if (DataType != dt) {
+				return default;
+			}
+
+			return (T)  ((object) Data);
+		}
+
+		// todo: performance: ~1100ms
+
+		public static CliResult Run(CliCommand command, CliDataType dt = CliDataType.None)
 		{
 			var cliResult = new CliResult(command)
 			{
@@ -45,22 +72,20 @@ namespace Androsharp.Model
 			var stdOut = proc.StandardOutput;
 
 			switch (dt) {
-				case DataType.None:
+				case CliDataType.None:
 					break;
-				case DataType.StringArray:
+				case CliDataType.StringArray:
 					cliResult.Data = CliUtilities.ReadAllLines(stdOut);
 					break;
-				case DataType.ByteArray:
-					// todo: performance ~900ms
+				case CliDataType.ByteArray:
+					// todo: performance ~900ms !!!
 					var end = CliUtilities.ReadToEnd(stdOut.BaseStream);
 					lock (end) {
 						cliResult.Data = end;
 					}
-					
+
 					break;
-				case DataType.Unknown:
-					break;
-				case DataType.String:
+				case CliDataType.String:
 					cliResult.Data = stdOut.ReadToEnd();
 					break;
 				default:
@@ -73,40 +98,9 @@ namespace Androsharp.Model
 			return cliResult;
 		}
 
-		public bool GetBinary(out byte[]? rg)
-		{
-			if (DataType == DataType.ByteArray) {
-				rg = Data as byte[];
-				return true;
-			}
-
-			rg = null;
-			return false;
-		}
-		public bool GetStr(out string? s)
-		{
-			if (DataType == DataType.String) {
-				s = Data as string;
-				return true;
-			}
-
-			s = null;
-			return false;
-		}
-		public bool GetLines(out string[]? rg)
-		{
-			if (DataType == DataType.StringArray) {
-				rg = Data as string[];
-				return true;
-			}
-
-			rg = null;
-			return false;
-		}
-
 		public bool SuccessfulIfLineContains(string s)
 		{
-			if (DataType == DataType.StringArray) {
+			if (DataType == CliDataType.StringArray) {
 				var rg = Data as string[];
 				return rg.Any(ln => ln.Contains(s));
 			}

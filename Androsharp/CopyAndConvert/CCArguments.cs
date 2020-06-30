@@ -1,6 +1,11 @@
+#region
+
+using System;
 using System.Text;
 using Androsharp.Model;
 using Androsharp.Utilities;
+
+#endregion
 
 // ReSharper disable InconsistentNaming
 
@@ -12,113 +17,122 @@ namespace Androsharp.CopyAndConvert
 
 
 	/// <summary>
-	/// DD arguments
+	///     DD arguments
 	/// </summary>
 	public sealed class CCArguments : ICommand
 	{
-		/// <summary>
-		/// <c>if</c>
-		/// </summary>
-		public string arg_if { get; internal set; }
+		public CCArguments()
+		{
+			InputFile      = null!;
+			InputBlockSize = 0;
+			Count          = 0;
+			Seek           = 0;
+			Skip           = 0;
+			InputFileFlag  = InputFileFlags.None;
 
-		
-		/// <summary>
-		/// <c>ibs</c>
-		/// </summary>
-		public long arg_ibs { get; internal set; }
 
-		/// <summary>
-		/// <c>count</c>
-		/// </summary>
-		public int arg_count { get; internal set; }
-
-		/// <summary>
-		/// <c>skip</c>
-		/// </summary>
-		public int arg_skip { get; internal set; }
+			BinaryRedirect        = null;
+			StatsRedirect         = "sdcard/dd_stats";
+			FileDescriptorReplace = true;
+		}
 
 		/// <summary>
-		/// <c>seek</c>
+		///     <c>if</c>
 		/// </summary>
-		public int arg_seek { get; internal set; }
+		public string InputFile { get; internal set; }
+
 
 		/// <summary>
-		/// <c>iflag</c>
+		///     <c>ibs</c>
 		/// </summary>
-		public InputFileFlags arg_iflag { get; internal set; }
+		public long InputBlockSize { get; internal set; }
 
 		/// <summary>
-		/// 
-		/// <see cref="UnixFileDescriptor.StdOut"/> - DD data
+		///     <c>count</c>
+		/// </summary>
+		public int Count { get; internal set; }
+
+		/// <summary>
+		///     <c>skip</c>
+		/// </summary>
+		public int Skip { get; internal set; }
+
+		/// <summary>
+		///     <c>seek</c>
+		/// </summary>
+		public int Seek { get; internal set; }
+
+		/// <summary>
+		///     <c>iflag</c>
+		/// </summary>
+		public InputFileFlags InputFileFlag { get; internal set; }
+
+		/// <summary>
+		///     <see cref="Unix.FD_STDOUT" /> - DD data
 		/// </summary>
 		/// <remarks>Auxiliary special argument</remarks>
 		public string? BinaryRedirect { get; internal set; }
 
 		/// <summary>
-		/// 
-		/// <see cref="UnixFileDescriptor.StdErr"/> - DD stats
-		/// 
+		///     <see cref="Unix.FD_STDERR" /> - DD stats
 		/// </summary>
 		/// <remarks>Auxiliary special argument</remarks>
 		public string? StatsRedirect { get; internal set; }
 
 		/// <summary>
-		/// 
-		/// 
 		/// </summary>
 		/// <remarks>Auxiliary special argument</remarks>
 		public bool FileDescriptorReplace { get; internal set; }
-
-		
-
-		public CCArguments()
-		{
-			arg_if = null!;
-			arg_ibs = 0;
-			arg_count = 0;
-			arg_seek = 0;
-			arg_skip = 0;
-			arg_iflag = InputFileFlags.None;
-			
-			
-			BinaryRedirect = null;
-			StatsRedirect = "sdcard/dd_stats";
-			FileDescriptorReplace = true;
-
-		}
 
 		public string Compile()
 		{
 			// adb shell "dd if=sdcard/image.jpg bs=128 skip=0 count=1 2>>/dev/null"
 
 			var sb = new StringBuilder();
-			
-			
+
+
 			sb.AppendFormat("dd if={0} ibs={1} skip={2} count={3} seek={4}",
-			                arg_if, arg_ibs + CopyConvert.BlockUnits, arg_skip, arg_count, arg_seek);
+			                InputFile, InputBlockSize + CopyConvert.BlockValue, Skip, Count, Seek);
 
-			if (arg_iflag != InputFileFlags.None) {
-				sb.AppendFormat(" iflag={0}", arg_iflag.ToString());
+			if (InputFileFlag != InputFileFlags.None) {
+				sb.AppendFormat((string) " iflag={0}", GetFlagString(InputFileFlag));
 			}
 
-			var fileDescriptorOp = FileDescriptorReplace ? Unix.REPLACE_OP : Unix.APPEND_OP;
+			string fileDescriptorOp = FileDescriptorReplace ? Unix.REPLACE_OP : Unix.APPEND_OP;
 
-			HandleRedirect(BinaryRedirect, CopyConvert.FD_DD_BINARY);
+			sb.Append(GetRedirectString(BinaryRedirect, CopyConvert.FD_DD_BINARY, fileDescriptorOp));
 
-			HandleRedirect(StatsRedirect, CopyConvert.FD_DD_STATS);
-			
-			
-			void HandleRedirect(string? redirect, int fd)
-			{
-				if (redirect != null) {
-					sb.Append(" ").Append((int) fd).Append(fileDescriptorOp).Append(redirect);
-				}
-			}
+			sb.Append(GetRedirectString(StatsRedirect, CopyConvert.FD_DD_STATS, fileDescriptorOp));
 
 
 			return sb.ToString();
 		}
 
-		
+		private static string GetRedirectString(string? redirect, int fd, string fileDescriptorOp)
+		{
+			var sb = new StringBuilder();
+			if (redirect != null) {
+				sb.Append(" ").Append(fd).Append(fileDescriptorOp).Append(redirect);
+			}
+
+			return sb.ToString();
+		}
+
+		private static string GetFlagString(InputFileFlags flags)
+		{
+			switch (flags) {
+				case InputFileFlags.None:
+					return null;
+					break;
+				case InputFileFlags.SkipBytes:
+					return "skip_bytes";
+					break;
+				case InputFileFlags.FullBlock:
+					return "fullblock";
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		}
 	}
 }
