@@ -217,12 +217,11 @@ namespace Androsharp.CopyAndConvert
 			if (BlockSize >= remSize) {
 				nBlocks = 1;
 			}
-			
-			
+
 			Console.WriteLine("\nRemote file: {0}", remote);
 			Console.WriteLine("Remote size: {0} bytes", remSize);
 
-			Console.WriteLine("\nBlock size: {0} bytes ({1} bu)", BlockSize, BlockValue);
+			Console.WriteLine("\nBlock size: {0} bytes ({1} bv, {2} bu)", BlockSize, BlockValue, BlockUnit);
 			
 			Console.WriteLine("\nDestination file: {0}", dest);
 			

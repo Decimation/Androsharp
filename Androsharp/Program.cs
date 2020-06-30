@@ -48,9 +48,23 @@ namespace Androsharp
 
 			if (fn == "repull") {
 				var remote = args[1];
-				var dest = args.Length >= 3 ? args[2] : null;
+				
+				var bvu = args.Length >= 3 ? args[2] : null;
+
+				if (bvu != null) {
+					var bu = bvu.Last().ToString();
+					var bv = long.Parse(bvu.SubstringBefore(bu));
+
+					CopyConvert.BlockValue = bv;
+					CopyConvert.BlockUnit  = bu;
+				}
+
+				var dest = args.Length >= 4 ? args[3] : null;
 
 				CopyConvert.Repull(remote, dest);
+			}
+			else if (fn == "setup") {
+				Android.Setup();
 			}
 			else if (fn == "reset") {
 				Android.Reset();
@@ -58,7 +72,6 @@ namespace Androsharp
 			else {
 				Console.WriteLine("Verb not recognized or implemented: {0}", fn);
 			}
-			
 		}
 	}
 }
